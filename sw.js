@@ -1,5 +1,5 @@
 // オフライン用キャッシュ。index.html を更新したら VERSION を上げる。
-const VERSION = 'otsuka-manga-v1';
+const VERSION = 'otsuka-manga-v2';
 const FONT_CSS = 'https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=Yomogi&family=Zen+Kaku+Gothic+New:wght@500;700;900&display=swap';
 const FILES = ['./', './index.html', './manifest.webmanifest', './icon-180.png', './icon-192.png', './icon-512.png'];
 async function cacheFonts(c) {
