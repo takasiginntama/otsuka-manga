@@ -1,0 +1,22 @@
+{
+  "name": "乙種化学 攻略まんが",
+  "short_name": "乙化まんが",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#faf6ec",
+  "theme_color": "#1a1815",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
