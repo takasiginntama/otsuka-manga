@@ -1962,5 +1962,69 @@ const QUIZ={"ch1-1":[{"id":"G90","teach":["J ＝ kg・m²・s⁻²","N ＝ kg・
 
 </script>
 
+
+<style id="fx-style">
+#fx-dim{position:fixed;inset:0;background:#000;opacity:0;pointer-events:none;z-index:2147483647;transition:opacity .2s}
+.fx-bar{position:fixed;right:max(10px,env(safe-area-inset-right,0px));bottom:calc(10px + env(safe-area-inset-bottom,0px));z-index:9999;display:flex;gap:6px}
+.fx-b{appearance:none;font:inherit;font-weight:900;font-size:13px;line-height:1.1;min-width:48px;height:48px;padding:0 8px;border:2.5px solid #141414;background:#f2b705;color:#141414;box-shadow:3px 3px 0 #141414;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.fx-b small{font-size:10px;font-weight:700}
+.fx-b:active{transform:translate(2px,2px);box-shadow:1px 1px 0 #141414}
+.fx-b:focus-visible{outline:3px solid #1d5fa6;outline-offset:2px}
+.fx-b.dk{background:#141414;color:#f2b705;border-color:#f2b705;box-shadow:3px 3px 0 #f2b705}
+body{padding-bottom:84px!important}
+#fx-sheet{position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,.55);display:flex;align-items:flex-end;justify-content:center}
+#fx-sheet[hidden]{display:none!important}
+.fx-panel{background:#f4f2ec;color:#141414;width:100%;max-width:640px;max-height:80vh;overflow-y:auto;border-top:4px solid #141414;padding:14px 16px calc(16px + env(safe-area-inset-bottom,0px))}
+.fx-head{display:flex;justify-content:space-between;align-items:center;font-weight:900;font-size:16px;margin-bottom:8px}
+.fx-close{appearance:none;font:inherit;font-weight:900;font-size:18px;width:40px;height:40px;border:2px solid #141414;background:#fff;cursor:pointer}
+.fx-ch{margin:14px 0 6px;font-weight:900;font-size:14px;background:#141414;color:#fff;padding:6px 10px}
+.fx-ch rt{color:#d9d5cb}
+.fx-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:6px}
+.fx-list a{display:block;text-decoration:none;color:#141414;background:#fff;border:2px solid #141414;padding:6px 8px;font-size:13px;line-height:1.9}
+.fx-list a b{display:block;font-size:11px;color:#d0322b}
+.fx-list a.on{background:#f2b705}
+.b-back{appearance:none;font:inherit;font-size:13px;font-weight:900;border:2px solid #fff;background:transparent;color:#fff;height:36px;padding:0 8px;cursor:pointer;flex:none}
+.b-back:disabled{opacity:.3}
+</style>
+<script>
+(function(){
+  var KEY='otsu-dim', LV=[0,.3,.5], NAME=['ふつう','暗め','もっと暗く'];
+  var lv=0; try{lv=+(localStorage.getItem(KEY)||0)||0;}catch(e){}
+  var layer=document.createElement('div'); layer.id='fx-dim'; document.body.appendChild(layer);
+  var bar=document.createElement('div'); bar.className='fx-bar'; document.body.appendChild(bar);
+  var b=document.createElement('button'); b.type='button'; b.className='fx-b dk'; b.setAttribute('aria-label','画面の明るさ');
+  function apply(){layer.style.opacity=LV[lv]; b.innerHTML='☾<small>'+NAME[lv]+'</small>';}
+  b.onclick=function(){lv=(lv+1)%LV.length; try{localStorage.setItem(KEY,lv);}catch(e){} apply();};
+  apply(); window.__fxBar=bar; bar.appendChild(b);
+})();
+(function(){
+  var bar=window.__fxBar; if(!bar) return;
+  var pages=[].slice.call(document.querySelectorAll('section.ep-page[id]'));
+  var chs=[].slice.call(document.querySelectorAll('section.chapter[id]'));
+  if(!pages.length) return;
+  function cur(){var y=window.innerHeight*0.35,i=-1;pages.forEach(function(p,k){if(p.getBoundingClientRect().top<=y)i=k;});return i;}
+  function go(el){if(el)el.scrollIntoView({block:'start'});}
+  function mk(html,label,fn){var b=document.createElement('button');b.type='button';b.className='fx-b';b.innerHTML=html;b.setAttribute('aria-label',label);b.onclick=fn;return b;}
+  var prev=mk('▲<small>前の問</small>','前の問へ',function(){var i=cur();if(i<0){window.scrollTo(0,0);return;}var t=pages[i].getBoundingClientRect().top;go(t<-40?pages[i]:pages[i-1]||null);if(i===0&&t>=-40)window.scrollTo(0,0);});
+  var next=mk('▼<small>次の問</small>','次の問へ',function(){var i=cur();go(pages[i+1]);});
+  var toc=mk('≡<small>目次</small>','目次を開く',open);
+  bar.insertBefore(next,bar.firstChild);bar.insertBefore(toc,bar.firstChild);bar.insertBefore(prev,bar.firstChild);
+  var sheet=document.createElement('div');sheet.id='fx-sheet';sheet.hidden=true;
+  var h='<div class="fx-panel" role="dialog" aria-label="目次"><div class="fx-head"><span>目次（タップで移動）</span><button type="button" class="fx-close" aria-label="閉じる">✕</button></div>';
+  h+='<div class="fx-list"><a href="#" data-top="1"><b>はじめ</b>表紙へ</a></div>';
+  chs.forEach(function(c){
+    var no=c.querySelector('.no'),t=c.querySelector('h2');
+    h+='<div class="fx-ch"><a href="#'+c.id+'" style="color:inherit;text-decoration:none">'+(no?no.innerHTML+' ':'')+(t?t.innerHTML:'')+'</a></div>';
+    var ps=pages.filter(function(p){return p.id.indexOf(c.id+'-')===0;});
+    if(ps.length){h+='<div class="fx-list">'+ps.map(function(p){var n=p.querySelector('.ep-no'),th=p.querySelector('.ep-theme');return '<a href="#'+p.id+'"><b>'+(n?n.innerHTML:'')+'</b>'+(th?th.innerHTML:'')+'</a>';}).join('')+'</div>';}
+  });
+  sheet.innerHTML=h+'</div>';document.body.appendChild(sheet);
+  function close(){sheet.hidden=true;}
+  function open(){var i=cur();sheet.querySelectorAll('.fx-list a').forEach(function(a){a.classList.toggle('on',i>=0&&a.getAttribute('href')==='#'+pages[i].id);});sheet.hidden=false;var on=sheet.querySelector('a.on');if(on)on.scrollIntoView({block:'center'});}
+  sheet.querySelector('.fx-close').onclick=close;
+  sheet.addEventListener('click',function(e){if(e.target===sheet){close();return;}var a=e.target.closest('a');if(!a)return;e.preventDefault();close();if(a.dataset.top){window.scrollTo(0,0);return;}go(document.getElementById(a.getAttribute('href').slice(1)));});
+  document.addEventListener('keydown',function(e){if(e.key==='Escape')close();});
+})();
+</script>
 <script>if('serviceWorker' in navigator){window.addEventListener('load',function(){navigator.serviceWorker.register('sw.js');});}</script>
 </body></html>
