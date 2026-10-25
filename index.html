@@ -2317,10 +2317,16 @@ details.fx-manga>.fx-manga-in{display:grid;grid-template-columns:1fr 1fr;gap:12p
 .exam-q p.fx-st.mk-x::before{content:"✕";border:2px solid var(--ng);color:var(--ng);font-weight:900;font-size:14px;line-height:18px;text-align:center}
 .exam-q p.fx-st.mk-x{color:#8d887d;text-decoration:line-through;text-decoration-color:var(--ng);text-decoration-thickness:2px}
 .exam-q p.fx-st.mk-o{background:rgba(29,95,166,.08)}
+.exam-q .fx-chips{display:flex;flex-wrap:wrap;gap:6px 14px;margin:2px 0 6px}
+.exam-q .fx-chips p.fx-st{margin:0;padding:2px 8px 2px 30px;background:#fff;border:2px solid #d8d3c7}
+.exam-q .fx-chips p.fx-st::before{left:4px;top:50%;transform:translateY(-50%)}
+.exam-q .fx-chips p.fx-st.mk-o{background:#e8eef7;border-color:var(--ok)}
+.exam-q .fx-chips p.fx-st.mk-x{border-color:var(--ng)}
 .fx-hint{font-size:12px;color:var(--muted,#6b665c);margin:4px 0 0;font-weight:700}
 </style>
 <script>
 (function(){
+  var MK=/(イ|ロ|ハ|ニ|ホ|ヘ)[\s　]*[．.]/g;
   var ST=/^[\s　]*(イ|ロ|ハ|ニ|ホ|ヘ)[\s　]*[．.、]/;
   function plain(p){var c=p.cloneNode(true);c.querySelectorAll('rt').forEach(function(r){r.remove();});return c.textContent;}
   function enhance(el){
@@ -2333,6 +2339,16 @@ details.fx-manga>.fx-manga-in{display:grid;grid-template-columns:1fr 1fr;gap:12p
       x.addEventListener('click',function(e){e.stopPropagation();var on=row.classList.toggle('out');x.innerHTML=on?'<b>↺</b>戻す':'<b>✕</b>消す';x.setAttribute('aria-label',on?'消したのを戻す':'この選択肢を消す');});
     });
     var any=false;
+    /* 1行に「イ.○○　ロ.○○」と並んでいる問題は、1つずつに分ける */
+    el.querySelectorAll('.exam-q p').forEach(function(p){
+      var n=(plain(p).match(MK)||[]).length; if(n<2)return;
+      var parts=p.innerHTML.split(/(?=(?:イ|ロ|ハ|ニ|ホ|ヘ)[\s　]*[．.])/);
+      var h0=document.createElement('p');h0.innerHTML=parts[0];var t0=plain(h0).replace(/[\s　]/g,'');var head=null;if(t0==='')parts.shift();else if(!/^(イ|ロ|ハ|ニ|ホ|ヘ)[．.]/.test(t0))head=parts.shift();
+      var box=document.createElement('div'); box.className='fx-chips';
+      if(head){var hp=document.createElement('p');hp.innerHTML=head;p.parentNode.insertBefore(hp,p);}
+      parts.forEach(function(x){var q=document.createElement('p');q.innerHTML=x.replace(/^[\s　]+|[\s　]+$/g,'').replace(/(&nbsp;|　|\s)+$/,'');box.appendChild(q);});
+      p.parentNode.replaceChild(box,p);
+    });
     el.querySelectorAll('.exam-q p').forEach(function(p){
       if(!ST.test(plain(p)))return; any=true; p.classList.add('fx-st');
       p.addEventListener('click',function(){
