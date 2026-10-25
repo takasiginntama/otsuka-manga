@@ -2217,6 +2217,18 @@ details.fx-manga>.fx-manga-in{display:grid;grid-template-columns:1fr 1fr;gap:12p
 .cc-keys .eq{background:var(--ng);border-color:var(--ng)}
 .cc-keys .k{font-size:13px;background:#1d5fa6;border-color:#1d5fa6}
 .cc-keys .c{background:#555}
+.cc-h{margin-left:auto;background:var(--hazard);color:var(--ink);border:2px solid var(--hazard);font-weight:900;font-size:14px;padding:2px 10px;border-radius:0}
+.cc-h+.cc-x{margin-left:0}
+.cc-hist{margin-top:6px;background:#f4f2ec;color:var(--ink);border:3px solid #fff;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.cc-hist[hidden]{display:none}
+.cc-hist ol{list-style:none;margin:0;padding:0}
+.cc-hist li button{display:block;width:100%;text-align:right;font:inherit;background:none;border:0;border-bottom:1px dashed #bdb8ac;padding:8px 10px;color:var(--ink)}
+.cc-hist li button:active{background:#e9e1c4}
+.cc-hist .he{font-size:13px;color:#6b665c;word-break:break-all}
+.cc-hist .hr{font-weight:900;font-size:20px;word-break:break-all}
+.cc-hist .hn{padding:24px 10px;text-align:center;color:#6b665c;font-size:14px}
+.cc-hist .hf{display:flex;gap:8px;justify-content:space-between;align-items:center;padding:6px 10px;font-size:12px;color:#6b665c;position:sticky;bottom:0;background:#f4f2ec;border-top:2px solid var(--ink)}
+.cc-hist .hclr{font:inherit;font-weight:900;font-size:13px;background:#fff;border:2px solid var(--ng);color:var(--ng);padding:3px 10px;border-radius:0}
 @media (max-height:720px){.cc{padding:6px}.cc-top{margin-bottom:4px}.cc-disp{min-height:50px;padding:4px 8px}.cc-res{font-size:22px}.cc-keys{gap:4px;margin-top:4px}.cc-keys button{padding:4px 0;font-size:16px}.cc-keys .k{font-size:11px}}
 </style>
 <script>
@@ -2231,10 +2243,25 @@ details.fx-manga>.fx-manga-in{display:grid;grid-template-columns:1fr 1fr;gap:12p
     ['0','n'],['.','n'],['×10ⁿ','c'],['Ans','c'],['=','eq'],
     ['+273','k'],['R 8.314','k'],['22.4','k'],['0.1013','k'],['π','k']
   ];
-  wrap.innerHTML='<div class="cc" role="dialog" aria-label="電卓"><div class="cc-top"><span class="cc-title">🧮 電卓</span><button type="button" class="cc-x">とじる</button></div><div class="cc-disp"><div class="cc-exp"></div><div class="cc-res">0</div></div><div class="cc-keys">'+K.map(function(k){return '<button type="button" class="'+k[1]+'" data-k="'+k[0]+'">'+k[0]+'</button>';}).join('')+'</div></div>';
+  wrap.innerHTML='<div class="cc" role="dialog" aria-label="電卓"><div class="cc-top"><span class="cc-title">🧮 電卓</span><button type="button" class="cc-h" aria-pressed="false">🕘 履歴</button><button type="button" class="cc-x">とじる</button></div><div class="cc-disp"><div class="cc-exp"></div><div class="cc-res">0</div></div><div class="cc-keys">'+K.map(function(k){return '<button type="button" class="'+k[1]+'" data-k="'+k[0]+'">'+k[0]+'</button>';}).join('')+'</div><div class="cc-hist" hidden></div></div>';
   document.body.appendChild(wrap);
   var ex=wrap.querySelector('.cc-exp'), rs=wrap.querySelector('.cc-res');
   var s='', ans=0, done=false;
+  var HK='otsu-calc-hist', H=[]; try{H=JSON.parse(localStorage.getItem(HK)||'[]')||[];}catch(e){H=[];}
+  var keys=wrap.querySelector('.cc-keys'), hist=wrap.querySelector('.cc-hist'), hb=wrap.querySelector('.cc-h');
+  function esc(x){return String(x).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+  function saveH(){try{localStorage.setItem(HK,JSON.stringify(H));}catch(e){}}
+  function drawH(){
+    hist.innerHTML=H.length?'<ol>'+H.map(function(x,i){return '<li><button type="button" data-i="'+i+'"><div class="he">'+esc(x.e)+' =</div><div class="hr">'+esc(x.r)+'</div></button></li>';}).join('')+'</ol><div class="hf"><span>タップで答えを使う</span><button type="button" class="hclr">履歴を消す</button></div>':'<div class="hn">まだ履歴はありません<br>「=」を押すとここに残ります</div>';
+  }
+  function showHist(on){hist.hidden=!on;keys.hidden=on;keys.style.display=on?'none':'';hb.setAttribute('aria-pressed',on);hb.textContent=on?'⌨ キー':'🕘 履歴';if(on){hist.style.height=Math.max(160,keysH)+'px';drawH();}}
+  var keysH=0;
+  hb.addEventListener('click',function(){if(hist.hidden)keysH=keys.offsetHeight;showHist(hist.hidden);});
+  hist.addEventListener('click',function(e){
+    if(e.target.closest('.hclr')){H=[];saveH();drawH();return;}
+    var b=e.target.closest('button[data-i]'); if(!b)return; var x=H[+b.dataset.i]; if(!x)return;
+    if(done||s===''){s=x.v;}else{s+=x.v;} done=false; ex.textContent=''; show(); showHist(false);
+  });
   function show(){rs.classList.remove('err');rs.textContent=s===''?'0':s;}
   function fmt(v){if(!isFinite(v))return 'エラー';var a=Math.abs(v);if(a!==0&&(a>=1e12||a<1e-6))return v.toExponential(6).replace(/\.?0+e/,'e').replace('e','×10^');return String(+v.toPrecision(12));}
   /* 安全な計算（evalを使わない） */
@@ -2259,7 +2286,7 @@ details.fx-manga>.fx-manga-in{display:grid;grid-template-columns:1fr 1fr;gap:12p
   function press(k){
     if(k==='C'){s='';ex.textContent='';done=false;return show();}
     if(k==='⌫'){if(done){s='';done=false;}else{s=s.replace(/(Ans|×10\^|.)$/,'');}return show();}
-    if(k==='='){if(!s)return;try{var v=calc(s);ex.textContent=s+' =';ans=v;s=fmt(v)==='エラー'?'':String(+v.toPrecision(12));rs.textContent=fmt(v);done=true;}catch(e){rs.textContent='式がおかしいかも';rs.classList.add('err');}return;}
+    if(k==='='){if(!s)return;try{var v=calc(s);ex.textContent=s+' =';ans=v;if(isFinite(v)){H.unshift({e:s,r:fmt(v),v:String(+v.toPrecision(12))});if(H.length>50)H.length=50;saveH();}s=fmt(v)==='エラー'?'':String(+v.toPrecision(12));rs.textContent=fmt(v);done=true;}catch(e){rs.textContent='式がおかしいかも';rs.classList.add('err');}return;}
     var map={'x²':'²','xʸ':'^','×10ⁿ':'×10^','R 8.314':'8.314','+273':'+273'};
     var add=map[k]||k;
     if(done){ if(/^[0-9.√(π]/.test(add)||add==='Ans'||add==='22.4'||add==='0.1013'||add==='8.314'){s='';} done=false; ex.textContent=''; }
