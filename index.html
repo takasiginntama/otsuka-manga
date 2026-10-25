@@ -2300,5 +2300,54 @@ details.fx-manga>.fx-manga-in{display:grid;grid-template-columns:1fr 1fr;gap:12p
   b.addEventListener('click',function(){setOpen(wrap.hidden);});
   bar.appendChild(b);
 })();
+</script><style id="fx-strike-style">
+.fx-row{display:flex;gap:6px;align-items:stretch}
+.fx-row>.qz-c{flex:1;min-width:0}
+.fx-x{flex:none;width:52px;font:inherit;font-weight:900;font-size:12px;line-height:1.2;border:3px solid var(--ink);background:#fff;color:var(--muted,#6b665c);box-shadow:3px 3px 0 var(--ink);padding:0;border-radius:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;touch-action:manipulation}
+.fx-x b{font-size:20px;line-height:1;color:var(--ink)}
+.fx-x:active{transform:translate(2px,2px);box-shadow:1px 1px 0 var(--ink)}
+.fx-row.out .fx-x{background:var(--ink);color:#fff}
+.fx-row.out .fx-x b{color:#fff}
+.fx-row.out>.qz-c:not(.ok):not(.ng){opacity:.38;text-decoration:line-through;text-decoration-thickness:2px;box-shadow:none;background:#e7e4dc}
+.fx-row.out>.qz-c.ok{opacity:1}
+.fx-row .qz-c:disabled~.fx-x{display:none}
+.exam-q p.fx-st{cursor:pointer;position:relative;padding-left:30px;border-radius:2px;-webkit-tap-highlight-color:transparent}
+.exam-q p.fx-st::before{content:"";position:absolute;left:0;top:.35em;width:22px;height:22px;border:2px dashed #b9b4a8;box-sizing:border-box}
+.exam-q p.fx-st.mk-o::before{content:"○";border:2px solid var(--ok);color:var(--ok);font-weight:900;font-size:15px;line-height:18px;text-align:center}
+.exam-q p.fx-st.mk-x::before{content:"✕";border:2px solid var(--ng);color:var(--ng);font-weight:900;font-size:14px;line-height:18px;text-align:center}
+.exam-q p.fx-st.mk-x{color:#8d887d;text-decoration:line-through;text-decoration-color:var(--ng);text-decoration-thickness:2px}
+.exam-q p.fx-st.mk-o{background:rgba(29,95,166,.08)}
+.fx-hint{font-size:12px;color:var(--muted,#6b665c);margin:4px 0 0;font-weight:700}
+</style>
+<script>
+(function(){
+  var ST=/^[\s　]*(イ|ロ|ハ|ニ|ホ|ヘ)[\s　]*[．.、]/;
+  function plain(p){var c=p.cloneNode(true);c.querySelectorAll('rt').forEach(function(r){r.remove();});return c.textContent;}
+  function enhance(el){
+    var ch=el.querySelector('.qz-choices'); if(!ch||ch.dataset.fx)return; ch.dataset.fx='1';
+    [].slice.call(ch.querySelectorAll(':scope>.qz-c')).forEach(function(b){
+      var row=document.createElement('div'); row.className='fx-row';
+      ch.insertBefore(row,b); row.appendChild(b);
+      var x=document.createElement('button'); x.type='button'; x.className='fx-x'; x.setAttribute('aria-label','この選択肢を消す');
+      x.innerHTML='<b>✕</b>消す'; row.appendChild(x);
+      x.addEventListener('click',function(e){e.stopPropagation();var on=row.classList.toggle('out');x.innerHTML=on?'<b>↺</b>戻す':'<b>✕</b>消す';x.setAttribute('aria-label',on?'消したのを戻す':'この選択肢を消す');});
+    });
+    var any=false;
+    el.querySelectorAll('.exam-q p').forEach(function(p){
+      if(!ST.test(plain(p)))return; any=true; p.classList.add('fx-st');
+      p.addEventListener('click',function(){
+        if(p.classList.contains('mk-o')){p.classList.remove('mk-o');p.classList.add('mk-x');}
+        else if(p.classList.contains('mk-x')){p.classList.remove('mk-x');}
+        else p.classList.add('mk-o');
+      });
+    });
+    var q=el.querySelector('.exam-q');
+    if(any&&q&&!el.querySelector('.fx-hint')){var t=document.createElement('p');t.className='fx-hint';t.textContent='イ・ロ・ハ…の文をタップ → ○ → ✕ → もどる。選択肢は右の「✕消す」で消せます';q.insertAdjacentElement('afterend',t);}
+  }
+  document.querySelectorAll('.quiz[data-ep]').forEach(function(el){
+    enhance(el);
+    new MutationObserver(function(){enhance(el);}).observe(el,{childList:true});
+  });
+})();
 </script><script>if('serviceWorker' in navigator){window.addEventListener('load',function(){navigator.serviceWorker.register('sw.js');});}</script>
 </body></html>
