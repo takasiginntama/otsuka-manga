@@ -2339,6 +2339,10 @@ details.fx-manga>.fx-manga-in{display:grid;grid-template-columns:1fr 1fr;gap:12p
 .fx-row.out .fx-x b{color:#fff}
 .fx-row.out>.qz-c:not(.ok):not(.ng){opacity:.38;text-decoration:line-through;text-decoration-thickness:2px;box-shadow:none;background:#e7e4dc}
 .fx-row.out>.qz-c.ok{opacity:1}
+.fx-row.auto:not(.keep)>.qz-c:not(.ok):not(.ng){opacity:.38;text-decoration:line-through;text-decoration-thickness:2px;box-shadow:none;background:#e7e4dc}
+.fx-row.auto:not(.keep)>.qz-c:not(:disabled)::before{content:"自動";position:absolute;right:8px;top:4px;font-size:10px;font-weight:900;color:#fff;background:var(--ok);padding:0 5px;text-decoration:none}
+.fx-row.auto:not(.keep) .fx-x{background:var(--ok);color:#fff;border-color:var(--ink)}
+.fx-row.auto:not(.keep) .fx-x b{color:#fff}
 .fx-row .qz-c:disabled~.fx-x{display:none}
 .exam-q p.fx-st{cursor:pointer;position:relative;padding-left:30px;border-radius:2px;-webkit-tap-highlight-color:transparent}
 .exam-q p.fx-st::before{content:"";position:absolute;left:0;top:.35em;width:22px;height:22px;border:2px dashed #b9b4a8;box-sizing:border-box}
@@ -2358,6 +2362,17 @@ details.fx-manga>.fx-manga-in{display:grid;grid-template-columns:1fr 1fr;gap:12p
   var MK=/(イ|ロ|ハ|ニ|ホ|ヘ)[\s　]*[．.]/g;
   var ST=/^[\s　]*(イ|ロ|ハ|ニ|ホ|ヘ)[\s　]*[．.、]/;
   function plain(p){var c=p.cloneNode(true);c.querySelectorAll('rt').forEach(function(r){r.remove();});return c.textContent;}
+  function paint(row){var x=row.querySelector('.fx-x');if(!x)return;var hid=(row.classList.contains('auto')&&!row.classList.contains('keep'))||row.classList.contains('out');x.innerHTML=hid?'<b>↺</b>戻す':'<b>✕</b>消す';x.setAttribute('aria-label',hid?'消したのを戻す':'この選択肢を消す');}
+  function letters(b){var c=b.cloneNode(true);c.querySelectorAll('.m,rt').forEach(function(r){r.remove();});var t=c.textContent.replace(/[\s　]/g,'');if(!/^[イロハニホヘ,，、及びとのみ]+$/.test(t))return null;return t.match(/[イロハニホヘ]/g)||[];}
+  function link(el){
+    var o=[],x=[];el.querySelectorAll('.exam-q p.fx-st').forEach(function(p){var L=plain(p).replace(/^[\s　]+/,'')[0];if(p.classList.contains('mk-o'))o.push(L);else if(p.classList.contains('mk-x'))x.push(L);});
+    el.querySelectorAll('.fx-row').forEach(function(row){
+      var b=row.querySelector('.qz-c');var ls=letters(b);var a=false;
+      if(ls){a=ls.some(function(l){return x.indexOf(l)>=0;})||o.some(function(l){return ls.indexOf(l)<0;});}
+      if(a&&!row.classList.contains('auto'))row.classList.remove('keep');
+      row.classList.toggle('auto',a);if(!a)row.classList.remove('keep');paint(row);
+    });
+  }
   function enhance(el){
     var ch=el.querySelector('.qz-choices'); if(!ch||ch.dataset.fx)return; ch.dataset.fx='1';
     [].slice.call(ch.querySelectorAll(':scope>.qz-c')).forEach(function(b){
@@ -2365,7 +2380,7 @@ details.fx-manga>.fx-manga-in{display:grid;grid-template-columns:1fr 1fr;gap:12p
       ch.insertBefore(row,b); row.appendChild(b);
       var x=document.createElement('button'); x.type='button'; x.className='fx-x'; x.setAttribute('aria-label','この選択肢を消す');
       x.innerHTML='<b>✕</b>消す'; row.appendChild(x);
-      x.addEventListener('click',function(e){e.stopPropagation();var on=row.classList.toggle('out');x.innerHTML=on?'<b>↺</b>戻す':'<b>✕</b>消す';x.setAttribute('aria-label',on?'消したのを戻す':'この選択肢を消す');});
+      x.addEventListener('click',function(e){e.stopPropagation();if(row.classList.contains('auto')){row.classList.toggle('keep');paint(row);return;}row.classList.toggle('out');paint(row);});
     });
     var any=false;
     /* 1行に「イ.○○　ロ.○○」と並んでいる問題は、1つずつに分ける */
@@ -2384,10 +2399,11 @@ details.fx-manga>.fx-manga-in{display:grid;grid-template-columns:1fr 1fr;gap:12p
         if(p.classList.contains('mk-o')){p.classList.remove('mk-o');p.classList.add('mk-x');}
         else if(p.classList.contains('mk-x')){p.classList.remove('mk-x');}
         else p.classList.add('mk-o');
+        link(el);
       });
     });
     var q=el.querySelector('.exam-q');
-    if(any&&q&&!el.querySelector('.fx-hint')){var t=document.createElement('p');t.className='fx-hint';t.textContent='イ・ロ・ハ…の文をタップ → ○ → ✕ → もどる。選択肢は右の「✕消す」で消せます';q.insertAdjacentElement('afterend',t);}
+    if(any&&q&&!el.querySelector('.fx-hint')){var t=document.createElement('p');t.className='fx-hint';t.innerHTML='文をタップ → <b style="color:var(--ok)">○</b>（答えに入る）→ <b style="color:var(--ng)">✕</b>（答えに入らない）→ もどる。合わない選択肢は<b>自動で消えます</b>。右の「✕消す」でも消せます';q.insertAdjacentElement('afterend',t);}
   }
   document.querySelectorAll('.quiz[data-ep]').forEach(function(el){
     enhance(el);
