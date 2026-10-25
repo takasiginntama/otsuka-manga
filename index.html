@@ -1917,7 +1917,7 @@ const QUIZ={"ch1-1":[{"id":"G75","teach":["N ＝ kg・m・s⁻²","Pa ＝ kg・m
     teach:'まずはこれを'+r('覚','おぼ')+'えるのじゃ。'+r('読','よ')+'んだら'+r('下','した')+'の'+r('問題','もんだい')+'へ!',idk:'わからん! '+r('解説','かいせつ')+'を'+r('見','み')+'る',idkmsg:'だいじょうぶ、ここで'+r('覚','おぼ')+'えればいい! '+r('正解','せいかい')+'は '};
   var MK=["(1)","(2)","(3)","(4)","(5)"];
   var KEY='otsu-quiz-v1',S={};
-  try{S=JSON.parse(localStorage.getItem(KEY)||'{}')||{};}catch(e){S={};}
+  try{S=JSON.parse(localStorage.getItem(KEY)||'{}')||{};}catch(e){S={};}window.__otsuS=S;
   function save(){try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}}
   function av(id){var e=document.getElementById(id);return e?e.innerHTML:'';}
   document.querySelectorAll('.quiz[data-ep]').forEach(function(el){
@@ -2027,5 +2027,251 @@ body{padding-bottom:84px!important}
   document.addEventListener('keydown',function(e){if(e.key==='Escape')close();});
 })();
 </script>
-<script>if('serviceWorker' in navigator){window.addEventListener('load',function(){navigator.serviceWorker.register('sw.js');});}</script>
+<style id="fx-warm-style">#fx-warm{position:fixed;inset:0;background:#ff9d4d;mix-blend-mode:multiply;opacity:0;pointer-events:none;z-index:2147483646;transition:opacity .2s}
+.fx-b.warm{background:#ffe2c2}.fx-b.warm.on{background:#ff9d4d}</style><script>
+(function(){
+  var bar=window.__fxBar; if(!bar) return;
+  var KEY='otsu-warm', on=false; try{on=localStorage.getItem(KEY)==='1';}catch(e){}
+  var layer=document.createElement('div'); layer.id='fx-warm'; document.body.appendChild(layer);
+  var b=document.createElement('button'); b.type='button'; b.className='fx-b warm'; b.setAttribute('aria-label','目にやさしいモード');
+  function apply(){layer.style.opacity=on?'.38':'0'; b.classList.toggle('on',on); b.setAttribute('aria-pressed',on); b.innerHTML='👁<small>'+(on?'やさしい':'ふつう')+'</small>';}
+  b.onclick=function(){on=!on; try{localStorage.setItem(KEY,on?'1':'0');}catch(e){} apply();};
+  apply(); bar.appendChild(b);
+})();
+</script><style id="fx-game-style">
+/* 下の操作バー：画面下の帯にして選択肢にかぶらない */
+body{padding-bottom:calc(74px + env(safe-area-inset-bottom,0px))}
+.fx-bar{left:0;right:0;bottom:0;justify-content:center;flex-wrap:nowrap;background:var(--ink);padding:6px 6px calc(6px + env(safe-area-inset-bottom,0px));gap:5px;border-top:3px solid var(--hazard)}
+.fx-bar>*{flex:1 1 0;max-width:110px;min-width:0}
+/* 漫画は折りたたみ */
+details.fx-manga{grid-column:1/-1;border:3px dashed var(--ink);background:var(--white)}
+details.fx-manga>summary{list-style:none;cursor:pointer;padding:10px 14px;font-weight:900;font-size:15px;display:flex;align-items:center;gap:8px}
+details.fx-manga>summary::-webkit-details-marker{display:none}
+details.fx-manga>summary::after{content:"▼";margin-left:auto;font-size:12px}
+details.fx-manga[open]>summary::after{content:"▲"}
+details.fx-manga>.fx-manga-in{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:0 12px 12px}
+@media (max-width:560px){details.fx-manga>.fx-manga-in{grid-template-columns:1fr}}
+.page{border:3px solid var(--ink);box-shadow:6px 6px 0 var(--ink)}
+.ep-bar{box-shadow:4px 4px 0 var(--hazard)}
+/* 問題をゲーム画面風に */
+.quiz{border-width:4px;box-shadow:6px 6px 0 var(--ink)}
+.qz-c{border-width:3px;box-shadow:3px 3px 0 var(--ink);position:relative}
+.qz-c:active:not(:disabled){transform:translate(2px,2px);box-shadow:1px 1px 0 var(--ink)}
+.qz-c.ok::after,.qz-c.ng::after{position:absolute;right:10px;top:50%;font-family:var(--f-display);font-size:22px;line-height:1;-webkit-text-stroke:1.5px var(--ink);paint-order:stroke fill;transform:translateY(-50%) rotate(-8deg)}
+.qz-c.ok::after{content:"正解!!";color:var(--hazard)}
+.qz-c.ng::after{content:"✕";color:var(--ng)}
+.qz-c.ok,.qz-c.ng{padding-right:96px}
+/* 敵（ステージ） */
+.bt{display:flex;align-items:center;gap:10px;background:var(--ink);color:var(--white);padding:6px 12px;position:relative;overflow:hidden;min-height:64px}
+.bt-mon{width:46px;height:56px;flex:none}
+.bt-mon svg{width:100%;height:100%}
+.bt-info{flex:1;min-width:0}
+.bt-name{font-family:var(--f-display);font-size:14px;line-height:1.6}
+.bt-name rt{color:#d9d5cb}
+.bt-taunt{font-size:13px;font-weight:700;color:var(--hazard)}
+.bt.ko{background:var(--hazard);color:var(--ink)}
+.bt.ko .bt-name rt,.bt.ko .bt-taunt{color:var(--ink)}
+.bt-ko{flex:none;font-family:var(--f-display);font-size:16px;color:var(--ng);border:3px solid var(--ng);background:#fff;padding:2px 8px;transform:rotate(-8deg)}
+.ch-hp{grid-column:1/-1;font-size:14px;font-weight:900;position:relative;z-index:1;color:var(--hazard)}
+.cover-hp{position:relative;z-index:1;margin-top:10px;display:inline-block;background:var(--hazard);color:var(--ink);font-weight:900;padding:4px 12px;border:2.5px solid var(--ink)}
+.fx-list a.ko::after{content:" ★クリア";color:var(--ng);font-weight:900;font-size:11px}
+/* 演出 */
+#gm-pop{position:fixed;left:50%;top:38%;z-index:2147483645;pointer-events:none;font-family:var(--f-display);font-size:44px;white-space:nowrap;-webkit-text-stroke:2.5px var(--ink);paint-order:stroke fill;opacity:0;transform:translate(-50%,-50%)}
+#gm-pop.hit{color:var(--hazard)} #gm-pop.miss{color:var(--ng)} #gm-pop.clear{color:#fff;font-size:40px;text-align:center;line-height:1.2}
+#gm-pop small{display:block;font-size:22px;color:var(--hazard)}
+#gm-pop.on{animation:gm-pop 1s ease-out}
+#gm-pop.clear.on{animation:gm-pop 1.8s ease-out}
+#gm-flash{position:fixed;inset:0;z-index:2147483644;pointer-events:none;opacity:0}
+#gm-flash.miss{background:rgba(208,50,43,.35)} #gm-flash.clear{background:rgba(242,183,5,.45)}
+#gm-flash.on{animation:gm-flash .5s ease-out}
+@keyframes gm-pop{0%{opacity:0;transform:translate(-50%,-50%) scale(.4) rotate(-10deg)}20%{opacity:1;transform:translate(-50%,-50%) scale(1.15) rotate(-6deg)}75%{opacity:1;transform:translate(-50%,-50%) scale(1) rotate(-6deg)}100%{opacity:0;transform:translate(-50%,-60%) scale(1) rotate(-6deg)}}
+@keyframes gm-flash{0%{opacity:1}100%{opacity:0}}
+@keyframes gm-shake{0%,100%{transform:none}25%{transform:translateX(-6px)}50%{transform:translateX(6px)}75%{transform:translateX(-3px)}}
+@media (prefers-reduced-motion:no-preference){.quiz.gm-shake{animation:gm-shake .35s}}
+</style><script>window.__noManga=true;</script>
+<script>
+(function(){
+  var INK="#141414",HZ="#f2b705";
+  function monster(kind){
+  const [name,state]=kind.split("-");
+  const beaten=state==="ko";
+  const eyes=beaten?`<path d="M34 50 l10 10 M44 50 l-10 10 M56 50 l10 10 M66 50 l-10 10" stroke="${INK}" stroke-width="3" stroke-linecap="round"/>`
+    :`<path d="M30 48 L46 56 L30 60Z M70 48 L54 56 L70 60Z" fill="${HZ}" stroke="${INK}" stroke-width="2"/>`;
+  if(name==="sesshi"){
+    return `<svg class="mon" viewBox="0 0 100 140" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
+    <rect x="28" y="10" width="44" height="98" rx="22" fill="#fff" stroke="${INK}" stroke-width="3"/>
+    <rect x="44" y="60" width="12" height="52" fill="${"#d0322b"}"/>
+    <circle cx="50" cy="116" r="20" fill="#d0322b" stroke="${INK}" stroke-width="3"/>
+    <path d="M28 70 h8 M28 82 h8 M28 94 h8 M64 70 h8 M64 82 h8 M64 94 h8" stroke="${INK}" stroke-width="2"/>
+    <g transform="translate(0,-4)">${eyes}</g>
+    <path d="${beaten?"M40 70 q10 -6 20 0":"M38 66 l4 5 l4 -5 l4 5 l4 -5 l4 5 l4 -5"}" stroke="${INK}" stroke-width="2.6" fill="none"/>
+    <text x="50" y="122" text-anchor="middle" font-size="18" font-weight="900" fill="#fff" font-family="sans-serif">℃</text>
+    <path d="M28 40 q-16 -6 -20 -22 M72 40 q16 -6 20 -22" stroke="${INK}" stroke-width="3" fill="none" stroke-linecap="round"/></svg>`;
+  }
+  if(name==="boss"){
+    return `<svg class="boss" viewBox="0 0 120 150" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
+    <path d="M10 150 Q8 70 60 40 Q112 70 110 150Z" fill="#2b2730" stroke="#fff" stroke-width="3"/>
+    <path d="M30 56 L18 8 L46 44 M90 56 L102 8 L74 44" fill="#2b2730" stroke="#fff" stroke-width="3" stroke-linejoin="round"/>
+    <g transform="translate(10,22)">${eyes}</g>
+    <path d="${beaten?"M46 98 q14 -8 28 0":"M42 92 L52 100 L60 92 L68 100 L78 92"}" stroke="#fff" stroke-width="3" fill="none"/>
+    <rect x="40" y="108" width="40" height="34" fill="#fff" stroke="${INK}" stroke-width="2"/>
+    <text x="60" y="134" text-anchor="middle" font-size="24" font-weight="900" fill="${INK}" font-family="sans-serif">狭</text></svg>`;
+  }
+  const label={nai:"不要",deki:"不可",eik:"無害",ona:"同"}[name]||"?";
+  return `<svg class="mon" viewBox="0 0 100 140" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
+  <path d="M12 140 Q6 110 14 70 Q20 22 50 18 Q80 22 86 70 Q94 110 88 140 L76 128 L64 140 L50 128 L36 140 L24 128Z" fill="#2b2730" stroke="#fff" stroke-width="3"/>
+  <g transform="translate(0,4)">${eyes}</g>
+  <path d="${beaten?"M40 80 q10 -6 20 0":"M38 76 l4 6 l4 -6 l4 6 l4 -6 l4 6 l4 -6"}" stroke="#fff" stroke-width="2.6" fill="none"/>
+  <circle cx="50" cy="108" r="17" fill="#fff" stroke="${INK}" stroke-width="2"/>
+  <text x="50" y="115" text-anchor="middle" font-size="${label.length>1?15:20}" font-weight="900" fill="${INK}" font-family="sans-serif">${label}</text></svg>`;
+}
+
+  var r=function(b,t){return '<ruby>'+b+'<rt>'+t+'</rt></ruby>';};
+  /* 漫画コマを折りたたむ（技の板＝解説ボードは出したまま） */
+  document.querySelectorAll('section.ep-page').forEach(function(pg){
+    var items=[].slice.call(pg.children).filter(function(c){return c.classList.contains('panel')&&!c.classList.contains('is-tech');});
+    if(!items.length)return;
+    if(window.__noManga){items.forEach(function(c){c.remove();});return;}
+    var d=document.createElement('details');d.className='fx-manga';
+    d.innerHTML='<summary>📖 まんがをよむ</summary><div class="fx-manga-in"></div>';
+    items[0].parentNode.insertBefore(d,items[0]);
+    var inn=d.lastChild; items.forEach(function(c){inn.appendChild(c);});
+  });
+  var FOUR=[['nai','「'+r('必要','ひつよう')+'ない」',/必要(と|は|が)?(し)?ない|不要/],['deki','「できない」',/できない|してはならない|不可/],['eik','「'+r('影響','えいきょう')+'はない」',/影響(は|を)?(与え|し)?ない|無関係|関係(が|は)?ない/],['ona','「'+r('同','おな')+'じ」',/同じ|等しい|変わらない/]];
+  function enemy(ep,list){
+    var c=ep.split('-')[0], n=+ep.split('-')[1];
+    if(c==='ch1')return {k:'sesshi',name:r('怪人','かいじん')+'セッシー'};
+    if(c==='ch2'){
+      var txt=JSON.stringify(list).replace(/<rt>.*?<\/rt>/g,'').replace(/<[^>]+>/g,''),best=null,bc=0;
+      FOUR.forEach(function(f){var m=txt.match(new RegExp(f[2].source,'g'));var k=m?m.length:0;if(k>bc){bc=k;best=f;}});
+      if(!best)best=FOUR[(n-1)%4];
+      return {k:best[0],name:r('地雷','じらい')+r('四天王','してんのう')+best[1]};
+    }
+    return {k:'boss',name:r('魔王','まおう')+'ハンイセバメ'};
+  }
+  var TAUNT=['かかってこい!','まだまだァ!',r('効','き')+'かんなァ!',r('甘','あま')+'いわ!'];
+  var HITS=['ズバッ!!','ドゴォ!!','バキィ!!','ズドン!!'];
+  function load(){return window.__otsuS||{};}
+  function tally(list,S){var o=0,d=0;list.forEach(function(q){if(S[q.id]===true)o++;if(q.id in S)d++;});return {o:o,d:d,n:list.length};}
+  var pop=document.createElement('div');pop.id='gm-pop';var fl=document.createElement('div');fl.id='gm-flash';
+  document.body.appendChild(fl);document.body.appendChild(pop);
+  function fx(kind,html){pop.className=kind;pop.innerHTML=html;fl.className=kind;void pop.offsetWidth;pop.className=kind+' on';if(kind!=='hit'){fl.className=kind+' on';}}
+  var combo=0, boxes=[];
+  document.querySelectorAll('.quiz[data-ep]').forEach(function(el){
+    var ep=el.dataset.ep, list=(typeof QUIZ!=='undefined'&&QUIZ[ep])||[]; if(!list.length)return;
+    var box=document.createElement('div'); box.className='bt'; el.parentNode.insertBefore(box,el);
+    var st={ep:ep,list:list,E:enemy(ep,list),box:box,el:el}; boxes.push(st);
+    el.addEventListener('click',function(e){
+      var t=e.target.closest&&e.target.closest('.qz-c,.qz-idk'); if(!t)return;
+      var wasClear=tally(list,load()).o===list.length;
+      setTimeout(function(){
+        var ok=t.classList.contains('qz-c')&&t.classList.contains('ok');
+        var nowClear=tally(list,load()).o===list.length;
+        if(ok){combo++;
+          if(nowClear&&!wasClear){fx('clear','STAGE CLEAR!!<small>'+r('全問','ぜんもん')+r('正解','せいかい')+'!</small>');}
+          else fx('hit',combo>=2?combo+'コンボ!!':HITS[Math.floor(Math.random()*HITS.length)]);
+        }else{combo=0;fx('miss','ミス!!');el.classList.remove('gm-shake');void el.offsetWidth;el.classList.add('gm-shake');}
+        render(st,ok);
+      },40);
+    },true);
+  });
+  function render(st,lastOk){
+    var S=load(), t=tally(st.list,S), ko=t.o===t.n, b=st.box;
+    var msg=ko?'ぐわぁぁ… ステージクリアだ!':(lastOk===false?'ぐはははは! '+r('引','ひ')+'っかかったな!':TAUNT[t.o%TAUNT.length]);
+    b.className='bt'+(ko?' ko':'');
+    b.innerHTML='<div class="bt-mon">'+monster(st.E.k+(ko?'-ko':''))+'</div><div class="bt-info"><div class="bt-name">'+st.E.name+'</div><div class="bt-taunt">'+msg+'</div></div>'+(ko?'<div class="bt-ko">CLEAR</div>':'');
+    chapters(S);
+  }
+  function chapters(S){
+    var all=0,koN=0;
+    document.querySelectorAll('section.chapter[id^="ch"]').forEach(function(c){
+      var L=boxes.filter(function(x){return x.ep.indexOf(c.id+'-')===0;}); if(!L.length)return;
+      var k=0; L.forEach(function(x){var t=tally(x.list,S);if(t.o===t.n)k++;});
+      all+=L.length;koN+=k;
+      var bar=c.querySelector('.ch-hp'); if(!bar){bar=document.createElement('div');bar.className='ch-hp';c.appendChild(bar);}
+      bar.innerHTML='★ ステージクリア '+k+' / '+L.length;
+    });
+    var cv=document.querySelector('.cover'); if(cv){var p=cv.querySelector('.cover-hp');if(!p){p=document.createElement('div');p.className='cover-hp';cv.appendChild(p);}
+      p.innerHTML='★ クリアしたステージ '+koN+' / '+all+(koN===all&&all?'　'+r('全','ぜん')+'クリア!! '+r('合格','ごうかく')+'へ!':'');}
+  }
+  boxes.forEach(function(st){render(st);});
+  var sheet=document.getElementById('fx-sheet');
+  if(sheet&&window.MutationObserver){new MutationObserver(function(){if(sheet.hidden)return;var S=load();sheet.querySelectorAll('.fx-list a[href^="#ch"]').forEach(function(a){var st=boxes.filter(function(x){return '#'+x.ep===a.getAttribute('href');})[0];a.classList.toggle('ko',!!st&&tally(st.list,S).o===st.list.length);});}).observe(sheet,{attributes:true,attributeFilter:['hidden']});}
+})();
+</script><style id="fx-calc-style">
+#fx-calc{position:fixed;left:0;right:0;bottom:calc(58px + env(safe-area-inset-bottom,0px));z-index:9998;display:flex;justify-content:center;pointer-events:none}
+#fx-calc[hidden]{display:none}
+.cc{pointer-events:auto;width:100%;max-width:420px;background:var(--ink);border:3px solid var(--ink);border-top:4px solid var(--hazard);box-shadow:0 -6px 0 rgba(20,20,20,.25);padding:8px;color:#fff}
+.cc-top{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.cc-title{font-weight:900;font-size:14px;color:var(--hazard)}
+.cc-x{margin-left:auto;background:#fff;color:var(--ink);border:2px solid #fff;font-weight:900;font-size:14px;padding:2px 10px;border-radius:0}
+.cc-disp{background:#f4f2ec;color:var(--ink);border:3px solid #fff;padding:6px 10px;text-align:right;min-height:64px;display:flex;flex-direction:column;justify-content:flex-end;overflow:hidden}
+.cc-exp{font-size:14px;color:#6b665c;min-height:18px;word-break:break-all}
+.cc-res{font-family:var(--f-display),sans-serif;font-size:28px;line-height:1.2;word-break:break-all}
+.cc-res.err{color:var(--ng);font-size:18px}
+.cc-keys{display:grid;grid-template-columns:repeat(5,1fr);gap:5px;margin-top:6px}
+.cc-keys button{font:inherit;font-weight:900;font-size:19px;padding:7px 0;border:2px solid #fff;background:#2a2a2a;color:#fff;border-radius:0;box-shadow:2px 2px 0 #000;touch-action:manipulation}
+.cc-keys button:active{transform:translate(1px,1px);box-shadow:none}
+.cc-keys .n{background:#fff;color:var(--ink);border-color:#fff}
+.cc-keys .op{background:var(--hazard);color:var(--ink);border-color:var(--hazard)}
+.cc-keys .eq{background:var(--ng);border-color:var(--ng)}
+.cc-keys .k{font-size:13px;background:#1d5fa6;border-color:#1d5fa6}
+.cc-keys .c{background:#555}
+@media (max-height:720px){.cc{padding:6px}.cc-top{margin-bottom:4px}.cc-disp{min-height:50px;padding:4px 8px}.cc-res{font-size:22px}.cc-keys{gap:4px;margin-top:4px}.cc-keys button{padding:4px 0;font-size:16px}.cc-keys .k{font-size:11px}}
+</style>
+<script>
+(function(){
+  var bar=window.__fxBar; if(!bar) return;
+  var wrap=document.createElement('div'); wrap.id='fx-calc'; wrap.hidden=true;
+  var K=[
+    ['C','c'],['(','c'],[')','c'],['⌫','c'],['÷','op'],
+    ['7','n'],['8','n'],['9','n'],['x²','c'],['×','op'],
+    ['4','n'],['5','n'],['6','n'],['√','c'],['−','op'],
+    ['1','n'],['2','n'],['3','n'],['xʸ','c'],['+','op'],
+    ['0','n'],['.','n'],['×10ⁿ','c'],['Ans','c'],['=','eq'],
+    ['+273','k'],['R 8.314','k'],['22.4','k'],['0.1013','k'],['π','k']
+  ];
+  wrap.innerHTML='<div class="cc" role="dialog" aria-label="電卓"><div class="cc-top"><span class="cc-title">🧮 電卓</span><button type="button" class="cc-x">とじる</button></div><div class="cc-disp"><div class="cc-exp"></div><div class="cc-res">0</div></div><div class="cc-keys">'+K.map(function(k){return '<button type="button" class="'+k[1]+'" data-k="'+k[0]+'">'+k[0]+'</button>';}).join('')+'</div></div>';
+  document.body.appendChild(wrap);
+  var ex=wrap.querySelector('.cc-exp'), rs=wrap.querySelector('.cc-res');
+  var s='', ans=0, done=false;
+  function show(){rs.classList.remove('err');rs.textContent=s===''?'0':s;}
+  function fmt(v){if(!isFinite(v))return 'エラー';var a=Math.abs(v);if(a!==0&&(a>=1e12||a<1e-6))return v.toExponential(6).replace(/\.?0+e/,'e').replace('e','×10^');return String(+v.toPrecision(12));}
+  /* 安全な計算（evalを使わない） */
+  function calc(str){
+    var t=[],i=0,m;
+    str=str.replace(/×10\^/g,'E');
+    while(i<str.length){var ch=str[i];
+      if(/[0-9.]/.test(ch)){m=/^[0-9]*\.?[0-9]*(E[-−]?[0-9]+)?/.exec(str.slice(i));var num=m[0].replace('−','-');if(num==='.'||num==='')throw 0;t.push({v:parseFloat(num.replace('E','e'))});i+=m[0].length;continue;}
+      if(str.startsWith('Ans',i)){t.push({v:ans});i+=3;continue;}
+      if(ch==='π'){t.push({v:Math.PI});i++;continue;}
+      t.push({o:ch});i++;}
+    var p=0;
+    function peek(){return t[p];}
+    function expr(){var v=term();while(peek()&&(peek().o==='+'||peek().o==='−')){var o=t[p++].o,w=term();v=o==='+'?v+w:v-w;}return v;}
+    function term(){var v=unary();while(peek()&&(peek().o==='×'||peek().o==='÷'||peek().v!==undefined||peek().o==='('||peek().o==='√')){var o='×';if(peek().o==='×'||peek().o==='÷')o=t[p++].o;var w=unary();v=o==='×'?v*w:v/w;}return v;}
+    function unary(){if(peek()&&peek().o==='−'){p++;return -unary();}if(peek()&&peek().o==='+'){p++;return unary();}return power();}
+    function power(){var v=post();if(peek()&&peek().o==='^'){p++;return Math.pow(v,unary());}return v;}
+    function post(){var v=prim();while(peek()&&peek().o==='²'){p++;v=v*v;}return v;}
+    function prim(){var k=t[p++];if(!k)throw 0;if(k.v!==undefined)return k.v;if(k.o==='('){var v=expr();if(peek()&&peek().o===')')p++;return v;}if(k.o==='√'){return Math.sqrt(post());}throw 0;}
+    var r=expr(); if(p<t.length)throw 0; return r;
+  }
+  function press(k){
+    if(k==='C'){s='';ex.textContent='';done=false;return show();}
+    if(k==='⌫'){if(done){s='';done=false;}else{s=s.replace(/(Ans|×10\^|.)$/,'');}return show();}
+    if(k==='='){if(!s)return;try{var v=calc(s);ex.textContent=s+' =';ans=v;s=fmt(v)==='エラー'?'':String(+v.toPrecision(12));rs.textContent=fmt(v);done=true;}catch(e){rs.textContent='式がおかしいかも';rs.classList.add('err');}return;}
+    var map={'x²':'²','xʸ':'^','×10ⁿ':'×10^','R 8.314':'8.314','+273':'+273'};
+    var add=map[k]||k;
+    if(done){ if(/^[0-9.√(π]/.test(add)||add==='Ans'||add==='22.4'||add==='0.1013'||add==='8.314'){s='';} done=false; ex.textContent=''; }
+    s+=add; show();
+  }
+  wrap.querySelector('.cc-keys').addEventListener('click',function(e){var b=e.target.closest('button');if(b)press(b.dataset.k);});
+  function setOpen(o){wrap.hidden=!o;document.body.style.paddingBottom=o?(wrap.firstChild.offsetHeight+80)+'px':'';}
+  wrap.querySelector('.cc-x').addEventListener('click',function(){setOpen(false);});
+  var b=document.createElement('button'); b.type='button'; b.className='fx-b calc'; b.setAttribute('aria-label','電卓');
+  b.innerHTML='🧮<small>電卓</small>';
+  b.addEventListener('click',function(){setOpen(wrap.hidden);});
+  bar.appendChild(b);
+})();
+</script><script>if('serviceWorker' in navigator){window.addEventListener('load',function(){navigator.serviceWorker.register('sw.js');});}</script>
 </body></html>
